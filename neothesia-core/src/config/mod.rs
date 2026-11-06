@@ -330,7 +330,8 @@ mod tests {
 
     #[test]
     fn old_waterfall_settings_receive_default_note_colors() {
-        let old = "(animation_speed:400.0,animation_offset:0.0,note_labels:true,note_naming:Letters)";
+        let old =
+            "(animation_speed:400.0,animation_offset:0.0,note_labels:true,note_naming:Letters)";
         let waterfall: WaterfallConfigV1 = ron_options().from_str(old).unwrap();
         assert!(!waterfall.note_by_color);
         assert_eq!(waterfall.note_colors[0], (255, 0, 0));
@@ -345,7 +346,9 @@ mod tests {
         for note in 0..12 {
             config.set_note_color(note, (note * 20, 100, 200));
         }
-        let text = ron_options().to_string(&Model::from_config(config)).unwrap();
+        let text = ron_options()
+            .to_string(&Model::from_config(config))
+            .unwrap();
         let restored: Model = ron_options().from_str(&text).unwrap();
         let restored = restored.build();
         assert!(restored.note_by_color());

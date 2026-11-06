@@ -916,7 +916,8 @@ impl super::MenuScene {
                             .border_radius([3.0; 4])
                             .build(ui);
                     }
-                    ctx.config.set_note_color(pitch as u8, (rgb[0], rgb[1], rgb[2]));
+                    ctx.config
+                        .set_note_color(pitch as u8, (rgb[0], rgb[1], rgb[2]));
                     nuon::quad()
                         .pos(start_x - 42.0, nuon::center_y(row_h, 28.0))
                         .size(28.0, 28.0)
