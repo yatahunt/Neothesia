@@ -1,0 +1,48 @@
+name: Windows executable
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Build Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compile Neothesia
+        shell: pwsh
+        run: |
+          cargo build --release --locked -p neothesia --bin neothesia --target x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Package executable and sound bank
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          Copy-Item target/x86_64-pc-windows-msvc/release/neothesia.exe dist/
+          Copy-Item default.sf2 dist/
+          Copy-Item LICENSE dist/
+
+      - name: Upload Windows download
+        uses: actions/upload-artifact@v4
+        with:
+          name: neothesia-windows-x64
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
