@@ -98,11 +98,15 @@ impl WaterfallRenderer {
 
                 let color_schema = config.color_schema();
 
-                let color = &color_schema[note.track_color_id % color_schema.len()];
-                let color = if key.kind().is_sharp() {
-                    color.dark
+                let color = if config.note_by_color() {
+                    config.note_color(note.note)
                 } else {
-                    color.base
+                    let color = &color_schema[note.track_color_id % color_schema.len()];
+                    if key.kind().is_sharp() {
+                        color.dark
+                    } else {
+                        color.base
+                    }
                 };
                 let color: Color = color.into();
 

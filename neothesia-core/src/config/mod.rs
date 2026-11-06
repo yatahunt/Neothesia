@@ -261,6 +261,23 @@ impl Config {
         self.waterfall.note_labels
     }
 
+    pub fn note_by_color(&self) -> bool {
+        self.waterfall.note_by_color
+    }
+
+    pub fn set_note_by_color(&mut self, enabled: bool) {
+        self.waterfall.note_by_color = enabled;
+    }
+
+    /// MIDI pitch class, shared by every octave.
+    pub fn note_color(&self, note: u8) -> (u8, u8, u8) {
+        self.waterfall.note_colors[(note % 12) as usize]
+    }
+
+    pub fn set_note_color(&mut self, note: u8, color: (u8, u8, u8)) {
+        self.waterfall.note_colors[(note % 12) as usize] = color;
+    }
+
     pub fn waterfall_note_naming(&self) -> NoteNaming {
         self.waterfall.note_naming
     }
@@ -303,6 +320,37 @@ impl Config {
         {
             std::fs::create_dir_all(path.parent().unwrap()).ok();
             std::fs::write(path, s).ok();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn old_waterfall_settings_receive_default_note_colors() {
+        let old = "(animation_speed:400.0,animation_offset:0.0,note_labels:true,note_naming:Letters)";
+        let waterfall: WaterfallConfigV1 = ron_options().from_str(old).unwrap();
+        assert!(!waterfall.note_by_color);
+        assert_eq!(waterfall.note_colors[0], (255, 0, 0));
+        assert_eq!(waterfall.note_colors[1], (128, 0, 0));
+        assert_eq!(waterfall.note_colors[11], (0, 255, 255));
+    }
+
+    #[test]
+    fn note_color_settings_round_trip_and_repeat_across_octaves() {
+        let mut config = Model::default().build();
+        config.set_note_by_color(true);
+        for note in 0..12 {
+            config.set_note_color(note, (note * 20, 100, 200));
+        }
+        let text = ron_options().to_string(&Model::from_config(config)).unwrap();
+        let restored: Model = ron_options().from_str(&text).unwrap();
+        let restored = restored.build();
+        assert!(restored.note_by_color());
+        for note in 0..128 {
+            assert_eq!(restored.note_color(note), ((note % 12) * 20, 100, 200));
         }
     }
 }

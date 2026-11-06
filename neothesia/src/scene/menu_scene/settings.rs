@@ -361,6 +361,30 @@ impl super::MenuScene {
                             ctx.config.set_note_labels(!ctx.config.note_labels());
                         }
 
+                        spacer(ui);
+
+                        nuon::settings_row()
+                            .title("Note By Color")
+                            .body(|ui, row_w, row_h| {
+                                if nuon::button()
+                                    .id("note-by-color")
+                                    .pos(row_w - 28.0, nuon::center_y(row_h, 28.0))
+                                    .size(28.0, 28.0)
+                                    .border_radius([4.0; 4])
+                                    .color([74, 68, 88])
+                                    .label(if ctx.config.note_by_color() { "X" } else { "" })
+                                    .build(ui)
+                                {
+                                    ctx.config.set_note_by_color(!ctx.config.note_by_color());
+                                    ctx.config.save();
+                                }
+                            })
+                            .build(ui, rows);
+
+                        if ctx.config.note_by_color() {
+                            self.settings_note_colors(ctx, ui, rows, spacer);
+                        }
+
                         if ctx.config.note_labels() {
                             spacer(ui);
 
@@ -830,4 +854,81 @@ async fn open_sondfont_picker_fut() -> Option<PathBuf> {
     }
 
     file.map(|f| f.path().to_owned())
+}
+
+impl super::MenuScene {
+    fn settings_note_colors(
+        &mut self,
+        ctx: &mut Context,
+        ui: &mut nuon::Ui,
+        rows: &dyn Fn(&mut nuon::Ui, nuon::SettingsRow<'_>),
+        spacer: &dyn Fn(&mut nuon::Ui),
+    ) {
+        let names = [
+            "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+        ];
+        let mut save_colors = false;
+        for (pitch, name) in names.iter().enumerate() {
+            spacer(ui);
+            nuon::settings_row()
+                .title(*name)
+                .body(|ui, row_w, row_h| {
+                    let (r, g, b) = ctx.config.note_color(pitch as u8);
+                    let mut rgb = [r, g, b];
+                    let slider_w = 130.0;
+                    let gap = 12.0;
+                    let start_x = row_w - 3.0 * (slider_w + gap);
+                    for (channel, value) in rgb.iter_mut().enumerate() {
+                        let x = start_x + channel as f32 * (slider_w + gap);
+                        let y = nuon::center_y(row_h, 20.0) + 7.0;
+                        let event = nuon::click_area(format!("note-color-{pitch}-{channel}"))
+                            .pos(x, y)
+                            .size(slider_w, 20.0)
+                            .build(ui);
+                        if event.is_pressed() || event.is_press_end() {
+                            let next = (event.local_pos().x / (slider_w - 1.0) * 255.0)
+                                .round()
+                                .clamp(0.0, 255.0) as u8;
+                            save_colors |= event.is_press_end();
+                            *value = next;
+                        }
+                        nuon::label()
+                            .text(format!("{}: {}", ["R", "G", "B"][channel], value))
+                            .pos(x, 3.0)
+                            .size(slider_w, 16.0)
+                            .font_size(12.0)
+                            .build(ui);
+                        nuon::quad()
+                            .pos(x, y + 7.0)
+                            .size(slider_w, 6.0)
+                            .color([74, 68, 88])
+                            .border_radius([3.0; 4])
+                            .build(ui);
+                        let tint = match channel {
+                            0 => [255, 80, 80],
+                            1 => [80, 220, 80],
+                            _ => [80, 140, 255],
+                        };
+                        nuon::quad()
+                            .pos(x + f32::from(*value) / 255.0 * (slider_w - 8.0), y + 3.0)
+                            .size(8.0, 14.0)
+                            .color(tint)
+                            .border_radius([3.0; 4])
+                            .build(ui);
+                    }
+                    ctx.config.set_note_color(pitch as u8, (rgb[0], rgb[1], rgb[2]));
+                    nuon::quad()
+                        .pos(start_x - 42.0, nuon::center_y(row_h, 28.0))
+                        .size(28.0, 28.0)
+                        .color(rgb)
+                        .border_radius([4.0; 4])
+                        .build(ui);
+                })
+                .build(ui, rows);
+        }
+        // Persist once a drag finishes, rather than writing on every pointer move.
+        if save_colors {
+            ctx.config.save();
+        }
+    }
 }

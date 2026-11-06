@@ -35,6 +35,12 @@ pub struct WaterfallConfigV1 {
     pub note_labels: bool,
 
     #[serde(default)]
+    pub note_by_color: bool,
+
+    #[serde(default = "default_note_colors")]
+    pub note_colors: [(u8, u8, u8); 12],
+
+    #[serde(default)]
     pub note_naming: NoteNaming,
 }
 
@@ -49,6 +55,8 @@ impl Default for WaterfallConfig {
             animation_speed: default_animation_speed(),
             animation_offset: default_animation_offset(),
             note_labels: default_note_labels(),
+            note_by_color: false,
+            note_colors: default_note_colors(),
             note_naming: NoteNaming::default(),
         })
     }
@@ -325,4 +333,21 @@ fn default_output() -> Option<String> {
 
 fn default_octave_shift() -> u8 {
     5
+}
+
+fn default_note_colors() -> [(u8, u8, u8); 12] {
+    [
+        (255, 0, 0),    // C: red
+        (128, 0, 0),    // C#: dark red
+        (255, 255, 0),  // D: yellow
+        (128, 128, 0),  // D#: dark yellow
+        (0, 0, 255),    // E: blue
+        (255, 128, 0),  // F: orange
+        (128, 64, 0),   // F#: dark orange
+        (0, 200, 0),    // G: green
+        (0, 100, 0),    // G#: dark green
+        (160, 32, 240), // A: purple
+        (80, 16, 120),  // A#: dark purple
+        (0, 255, 255),  // B: cyan
+    ]
 }
